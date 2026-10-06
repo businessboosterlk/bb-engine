@@ -1,0 +1,9 @@
+{
+  "name": "The Engine by Business Booster",
+  "short_name": "The Engine",
+  "start_url": "./?src=app",
+  "display": "standalone",
+  "background_color": "#08080a",
+  "theme_color": "#f5f5f7",
+  "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }, { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }, { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }]
+}
