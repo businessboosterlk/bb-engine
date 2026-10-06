@@ -1,0 +1,21 @@
+{
+  "name": "bb-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BB Engine: the live instrument of the agency. Clients, capacity, output, renewals for the team; money for the owner. Node build and Next.js API, Angular front, sealed data on GitHub Pages.",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/api & npm run start --workspace apps/web",
+    "dev:api": "npm run dev --workspace apps/api",
+    "dev:web": "npm run start --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "build:api": "npm run build --workspace apps/api",
+    "casts": "node scripts/sync-casts.mjs",
+    "check": "python3 ~/bb-systems/stack-standard/check_stack.py . && node scripts/check-casts.mjs"
+  },
+  "dependencies": {
+    "next": "^15.5.0",
+    "@angular/core": "^19.2.0"
+  },
+  "engines": { "node": ">=22" }
+}

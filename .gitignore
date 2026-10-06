@@ -1,0 +1,15 @@
+
+# engine: plain data stays on this Mac
+# photographs and run output: proof for a person to look at, rebuilt by every run
+# server clients' settings: onboarding input only, stored in the database, never in a public repo
+.DS_Store
+.env
+.env.local
+apps/api/.next/
+apps/web/.angular/
+apps/web/dist/
+casts/private/
+engine/forecast.json
+engine/local/
+evidence/
+node_modules/

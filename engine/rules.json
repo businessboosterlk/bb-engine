@@ -1,0 +1,25 @@
+{
+  "_about": "The capacity rules the Engine measures against. One source: BB-METRICS.md section 11 and the Engine Room sessions of August to October 2026. Change a number here and every screen follows.",
+  "smm_cap_per_seat": 12,
+  "design_clients_per_designer": 8,
+  "edit_capacity_videos_per_month": 127,
+  "editor_videos_per_month": 21,
+  "shoot_days_per_month": 20,
+  "video_done_stage": "add_to_drive",
+  "graphic_done_stage": "approved",
+  "video_stage_order": ["video_shot", "cutting_color_grading", "editing", "rendering", "video_head_review", "client_review", "changes", "client_changes", "add_to_drive"],
+  "video_stage_labels": {
+    "video_shot": "Shot", "cutting_color_grading": "Cut and grade", "editing": "Editing", "rendering": "Rendering",
+    "video_head_review": "Head review", "client_review": "Client review", "changes": "Changes", "client_changes": "Client changes", "add_to_drive": "Done"
+  },
+  "roles": {
+    "smm": ["Social Media Manager"],
+    "design": ["Graphic Designer"],
+    "edit": ["editor"],
+    "shoot": ["video_head"],
+    "dev": ["Dev Head", "Developer"]
+  },
+  "renewal_warning_days": 60,
+  "near_capacity_pct": 85,
+  "unpaid_days": 30
+}
