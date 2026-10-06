@@ -48,8 +48,9 @@ import { IconComponent } from '../../ui/icon.component';
     .labels{position:absolute;inset:0;pointer-events:none}
     /* on a narrow stage the gears sit too close for floating words: the labels become one row of chips along the top, in gear order */
     .labels.row{inset:auto 12px auto 12px;top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-    .labels.row .lbl{position:static;transform:none}
-    .lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;display:inline-flex;align-items:baseline;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(20,20,23,.72);color:#fff;font-size:12.5px;font-weight:600;backdrop-filter:blur(8px);transition:opacity 160ms var(--ease),background 160ms var(--ease)}
+    /* OPTICAL: in the phone row the words read 1px high by their ink (ui-precision, 6 Oct 2026); 2px more above moves the centre down 1px */
+    .labels.row .lbl{position:static;transform:none;padding-top:2px}
+    .lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;display:inline-flex;align-items:center;line-height:1;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(20,20,23,.72);color:#fff;font-size:12.5px;font-weight:600;backdrop-filter:blur(8px);transition:opacity 160ms var(--ease),background 160ms var(--ease)}
     .lbl em{font-style:normal;font-size:11px;opacity:.75;font-variant-numeric:tabular-nums}
     .lbl.on{background:#fff;color:#141417;border-color:#fff}.lbl.on em{opacity:.7}
     .lbl.hid{opacity:0;pointer-events:none}
@@ -120,7 +121,7 @@ export class Machine3dComponent implements AfterViewInit, OnDestroy {
     const w = this.gears.length ? this.gears[this.gears.length - 1].x + this.gears[this.gears.length - 1].r + this.gears[0].r : 2;
     const cx = this.gears.length ? (this.gears[0].x - this.gears[0].r + this.gears[this.gears.length - 1].x + this.gears[this.gears.length - 1].r) / 2 : 0;
     this.scene.children.forEach((o: any) => { if (o.isMesh) o.position.x -= cx; }); this.gears.forEach(g => g.x -= cx);
-    this.home = { pos: [0, 1.6, Math.max(6, w * 1.15)], target: [0, 0, 0] };
+    this.rowW = w; this.home = { pos: [0, 1.6, this.fitZ()], target: [0, 0, 0] };
     this.cam.position.set(...this.home.pos); this.cam.lookAt(0, 0, 0);
     this.controls = new OrbitControls(this.cam, canvas); this.controls.enableDamping = true; this.controls.dampingFactor = .055; this.controls.enablePan = false;
     this.controls.minDistance = 2.2; this.controls.maxDistance = 20; this.controls.target.set(0, 0, 0);
@@ -128,7 +129,17 @@ export class Machine3dComponent implements AfterViewInit, OnDestroy {
     canvas.addEventListener('pointerup', e => { if (!this.down) return; const moved = Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y); this.down = null; if (moved > 7) return; this.pick(e); });
     this.resize(); new ResizeObserver(() => this.resize()).observe(stage);
   }
-  private resize(){ const s = this.stageRef.nativeElement; const w = s.clientWidth, h = s.clientHeight; if (!w || !h) return; this.renderer.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); this.zone.run(() => this.narrow.set(w < 720)); }
+  /* THE HOME FRAMING FITS THE WHOLE ROW to the stage's width, whatever its shape: on a tall phone the
+     camera stands further back (bb-3d-ux gate 2). Seen on the live site, 6 Oct 2026: a fixed distance
+     cut the outer gears off a 390px screen. */
+  private rowW = 2;
+  private fitZ(){ const half = (this.rowW * 1.12) / 2; const vfov = (this.cam?.fov || 42) * Math.PI / 180; const aspect = this.cam?.aspect || 1.6;
+    return Math.max(6, half / Math.tan(vfov / 2) / aspect, half / Math.tan(vfov / 2) * .9); }
+  private resize(){ const s = this.stageRef.nativeElement; const w = s.clientWidth, h = s.clientHeight; if (!w || !h) return; this.renderer.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix();
+    const z = this.fitZ(); const atHome = !this.selected() && !this.tween; this.home = { pos: [0, 1.6, z], target: [0, 0, 0] };
+    if (atHome) { this.cam.position.set(0, 1.6, z); this.controls?.target.set(0, 0, 0); }
+    if (this.controls) this.controls.maxDistance = Math.max(20, z * 1.6);
+    this.zone.run(() => this.narrow.set(w < 720)); }
   private pick(e: PointerEvent){
     const T = this.T; const r = this.canvasRef.nativeElement.getBoundingClientRect();
     const m = new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
