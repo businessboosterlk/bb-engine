@@ -28,7 +28,7 @@ const plan = [
     { name: 'the one letter on the rail avatar', sel: '.r-foot .avatar', inset: 2, shape: 'circle', text: true, desk: true },
     { name: 'the B on the rail mark', sel: '.r-mono', inset: 1, text: true, desk: true },
     ...tabs ]],
-  ['/engine/machine?view=3d', [ { name: 'the words on the centre of a gear label', sel: '.lbl', index: 0, inset: 2, text: true, baseline: true, open: async p => { await p.waitForFunction(() => window.__m3d && window.__m3d.dbg().state === 'ready', null, { timeout: 30000 }); } } ]],
+  ['/engine/machine?view=3d', [ { name: 'the refresh icon in the Home button', sel: '.home', inset: 4, open: async p => { await p.waitForFunction(() => window.__m3d && window.__m3d.dbg().state === 'ready', null, { timeout: 30000 }); } } ]],
   ['/engine/capacity', [ { name: 'the number on a capacity ring, capacity screen', sel: '.seat .top bb-ring .ring', inset: 12, shape: 'circle', text: true }, { name: 'a letter on a person\'s avatar', sel: '.people .avatar', index: 0, inset: 2, shape: 'circle', text: true } ]],
   ['/engine/clients', [ { name: 'the search icon in its field', sel: '.fb-q bb-icon', inset: 1 }, { name: 'a client\'s initial on its avatar', sel: '.card .avatar', index: 0, inset: 2, shape: 'circle', text: true } ]],
 ];

@@ -75,18 +75,22 @@ async function world(desk) {
     await go('#/engine/machine'); await press('machine-view-3d', { wait: 600 }); s = await state(); check('machine: See it in 3D turns the layer on in the address', /view=3d/.test(s.q), s.q);
     await p.waitForFunction(() => window.__m3d && window.__m3d.dbg().state !== 'loading', null, { timeout: 30000 });
     const d0 = await p.evaluate(() => window.__m3d.dbg());
-    check('3D: the engine starts and draws every seat as a gear', d0.state === 'ready' && d0.gears === 4 && d0.lit === 4, d0);
+    check('3D: the engine starts and draws every seat as a station on the line', d0.state === 'ready' && d0.gears === 4 && d0.lit === 4, d0);
     const home = await p.evaluate(() => { const d = window.__m3d.step(3); return { cam: d.camera, home: d.home.pos }; });
     check('3D: HOME, the camera rests exactly on the home framing', home.cam.every((v, i) => Math.abs(v - home.home[i]) < .01), home);
     await press('gear-edit', { wait: 100 }); const d1 = await p.evaluate(() => window.__m3d.step(90));
-    check('3D: SELECT dims the rest and settles the camera on the chosen gear', d1.selected === 'edit' && d1.lit === 1 && d1.dimmed === 3 && !d1.tweening, d1);
+    check('3D: SELECT dims the rest and settles the camera on the chosen station', d1.selected === 'edit' && d1.lit === 1 && d1.dimmed === 3 && !d1.tweening, d1);
     await press('gear-smm', { wait: 100 }); const d2 = await p.evaluate(() => window.__m3d.step(90));
-    check('3D: THE SWITCH, selecting another gear while one is open works in one motion', d2.selected === 'smm' && d2.lit === 1 && !d2.tweening, d2);
+    check('3D: THE SWITCH, selecting another station while one is open works in one motion', d2.selected === 'smm' && d2.lit === 1 && !d2.tweening, d2);
     await press('gear-reset', { wait: 100 }); const d3 = await p.evaluate(() => window.__m3d.step(90));
-    check('3D: RESET returns every gear and the camera home exactly', d3.selected === null && d3.lit === 4 && d3.camera.every((v, i) => Math.abs(v - d3.home.pos[i]) < .01), d3);
+    check('3D: RESET returns every station and the camera home exactly', d3.selected === null && d3.lit === 4 && d3.camera.every((v, i) => Math.abs(v - d3.home.pos[i]) < .01), d3);
     for (const k of ['design', 'shoot']) await press('gear-' + k, { wait: 100 });
-    await press('gear-smm', { wait: 100 }); await press('gear-open'); s = await state(); check('3D: Open the seat lands on capacity', s.hash.startsWith('#/engine/capacity'), s.hash);
+    await press('gear-smm', { wait: 100 }); await press('gear-open'); s = await state(); check('3D: Open the station lands on capacity', s.hash.startsWith('#/engine/capacity'), s.hash);
     await go('#/engine/machine?view=3d'); await p.waitForFunction(() => window.__m3d && window.__m3d.dbg().state === 'ready', null, { timeout: 30000 }); await press('gear-home'); await press('machine-view-3d', { wait: 600 }); s = await state(); check('machine: Flat view takes the layer off', !/view=3d/.test(s.q), s.q);
+    /* in 3D the four cards say what the model cannot; each opens the screen it names */
+    for (const [act, h] of [['insight-decision', '#/engine/'], ['insight-change', '#/engine/output'], ['insight-limit', '#/engine/capacity'], ['insight-renewal', '#/engine/clients']]) {
+      await go('#/engine/machine?view=3d'); await p.waitForFunction(() => window.__m3d && window.__m3d.dbg().state === 'ready', null, { timeout: 30000 });
+      await press(act); s = await state(); check('3D: the card ' + act + ' opens ' + h, s.hash.startsWith(h) && s.hash !== '#/engine/machine', s.hash); }
   });
   await flow('clients', async () => {
     await go('#/engine/clients'); await press('clients-copy'); check('clients: Copy as text says Copied', /Copied/.test(await loc('clients-copy').textContent()));

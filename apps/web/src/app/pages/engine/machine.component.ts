@@ -23,14 +23,26 @@ import { Machine3dComponent } from './machine3d.component';
       <a class="btn ghost" data-act="machine-view-3d" routerLink="/engine/machine" [queryParams]="{ view: view() === '3d' ? null : '3d' }" [attr.aria-pressed]="view() === '3d'"><bb-icon name="rotate3d"/><span>{{ view() === '3d' ? 'Flat view' : 'See it in 3D' }}</span></a>
     </div></div>
 
-    @if (view() === '3d') { <bb-machine3d [seats]="p.seats" [month]="p.month.label"/> }
+    @if (view() === '3d') { <bb-machine3d [seats]="p.seats" [month]="p.month.label" [flow]="{ clients: p.counts.clients, videosDone: out().videos.done, videosContracted: out().videos.contracted, postsDone: out().posts.done, postsContracted: out().posts.contracted, newClients: p.intake?.new_this_month?.length || 0 }"/>
+      <!-- in 3D the cards say what the model cannot: a decision, the change, the limit, the next renewal -->
+      <div class="kpi ins">
+        @if (decision(); as d) { <a class="card" data-act="insight-decision" [routerLink]="d.href" [queryParams]="d.q || {}"><div class="k-label">Needs a decision</div><div class="i-t">{{ d.title }}</div><div class="k-sub">{{ d.why }}</div></a> }
+        @else { <a class="card" data-act="insight-decision" routerLink="/engine/alerts"><div class="k-label">Needs a decision</div><div class="i-t">Nothing right now</div><div class="k-sub">No red or amber alert is open</div></a> }
+        <a class="card" data-act="insight-change" routerLink="/engine/output"><div class="k-label">Since last month</div><div class="i-t">{{ out().videos.done }} videos done so far</div><div class="k-sub">{{ last().label }} finished with {{ last().videos.done }} videos done and {{ last().posts.done }} posts approved</div></a>
+        <a class="card" data-act="insight-limit" routerLink="/engine/capacity" [fragment]="tight().key"><div class="k-label">Nearest the limit</div><div class="i-t">{{ tight().label }}, {{ tight().spare >= 0 ? tight().spare + ' ' + unitWord(tight()) + ' of room' : (-tight().spare) + ' ' + unitWord(tight()) + ' over' }}</div><div class="k-sub">{{ tight().load }} of {{ tight().capacity }} {{ tight().unit }}</div></a>
+        @if (nextRenewal(); as r) { <a class="card" data-act="insight-renewal" routerLink="/engine/clients" [queryParams]="{ open: r.name }"><div class="k-label">Next renewal to secure</div><div class="i-t">{{ r.name }}</div><div class="k-sub">{{ niceDate(r.date) }}, {{ r.days }} days away</div></a> }
+        @else { <a class="card" data-act="insight-renewal" routerLink="/engine/clients"><div class="k-label">Next renewal to secure</div><div class="i-t">None dated</div><div class="k-sub">No contract has a future end date recorded</div></a> }
+      </div>
+    }
 
+    @if (view() !== '3d') {
     <div class="kpi">
       <a class="card" data-act="kpi-clients" routerLink="/engine/clients"><div class="k-label">Clients</div><div class="k-val">{{ p.counts.clients }}</div><div class="k-sub">{{ soon().length ? soon().length + ' contracts end within 60 days' : 'no contract ends within 60 days' }}</div></a>
       <a class="card" data-act="kpi-capacity" routerLink="/engine/capacity"><div class="k-label">Tightest seat</div><div class="k-val" [class.warn]="tight().pct! >= 85">{{ tight().pct }}%</div><div class="k-sub">{{ tight().label }}: {{ tight().load }} of {{ tight().capacity }} {{ tight().unit }}</div></a>
       <a class="card" data-act="kpi-videos" routerLink="/engine/output"><div class="k-label">Videos this month</div><div class="k-val">{{ out().videos.done }} <small>of {{ out().videos.contracted }}</small></div><div class="k-sub">done, {{ out().videos.open }} in the system</div></a>
       <a class="card" data-act="kpi-posts" routerLink="/engine/output"><div class="k-label">Posts this month</div><div class="k-val">{{ out().posts.done }} <small>of {{ out().posts.contracted }}</small></div><div class="k-sub">approved in the graphic system</div></a>
     </div>
+    }
 
     <div class="sec"><div class="sec-head"><h3>Capacity, seat by seat</h3><a data-act="see-capacity" routerLink="/engine/capacity">Open capacity</a></div>
       <div class="rings">
@@ -79,9 +91,32 @@ import { Machine3dComponent } from './machine3d.component';
           } @empty { <div class="empty"><strong>Nothing booked ahead</strong>The shoot table has no date from today on.</div> }
         </div></div>
     </div>
+
+    <div class="grid2">
+      <div class="sec"><div class="sec-head"><h3>Leads from Meta ads</h3><span>{{ p.ads?.measured ? (p.ads!.form_leads + ' form leads in ' + p.month.label) : 'not measured' }}</span></div>
+        <div class="card list">
+          @for (a of (p.ads?.accounts || []).slice(0, 6); track a.id) {
+            <div class="li"><span class="tx"><strong>{{ a.client || a.name }}</strong><span>{{ a.client ? a.name + ' · ' : 'not matched to a client · ' }}{{ a.days }} {{ a.days === 1 ? 'day' : 'days' }} live</span></span><span class="num lead">{{ a.leads }}</span></div>
+          } @empty { <div class="empty"><strong>No ad rows this month</strong>{{ p.ads?.last_pull ? 'The feed ran but found no delivery for ' + p.month.label + '.' : 'The ads feed has not recorded a pull.' }}</div> }
+        </div></div>
+      <div class="sec"><div class="sec-head"><h3>Where the numbers come from</h3><span>measured {{ stamp(p.generated) }}</span></div>
+        <div class="card list src">
+          @for (s of p.sources || []; track s.key) {
+            <div class="li"><i class="sdot" [attr.data-s]="s.state"></i><span class="tx"><strong>{{ s.name }}</strong><span>{{ s.from }} · {{ s.note }}</span></span><span class="st-w" [attr.data-s]="s.state">{{ stateWord[s.state] }}</span></div>
+          }
+        </div></div>
+    </div>
     }`,
   styles: [`
     .k-val small{font-size:14px;font-weight:600;color:var(--muted)}
+    .ins .card{display:grid;gap:4px;align-content:start}
+    .i-t{font-size:15px;font-weight:650;line-height:1.3;color:var(--ink)}
+    .lead{font-size:16px;font-weight:700;margin-left:auto;padding-left:12px}
+    .src .li{gap:12px}
+    .sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--muted)}
+    .sdot[data-s=live]{background:var(--green)}.sdot[data-s=snapshot],.sdot[data-s=locked]{background:var(--amber)}.sdot[data-s=down]{background:var(--red)}
+    .st-w{margin-left:auto;padding-left:12px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+    .st-w[data-s=live]{color:var(--green)}.st-w[data-s=down]{color:var(--red)}
     .k-val.warn{color:var(--amber)}
     .sec-head a{font-size:12px;color:var(--brand-text);font-weight:600}
     .rings{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
@@ -111,6 +146,12 @@ export class MachineComponent implements OnInit, OnDestroy {
   out = computed(() => this.p()!.output.this_month);
   soon = computed(() => this.p()!.renewals.filter(r => r.days !== null && r.days <= 60));
   ninety = computed(() => this.p()!.renewals.filter(r => r.days !== null && r.days <= 90));
+  last = computed(() => this.p()!.output.last_month);
+  decision = computed(() => this.engine.alerts().find(a => a.level === 'red') || this.engine.alerts().find(a => a.level === 'amber') || null);
+  nextRenewal = computed(() => this.p()!.renewals.find(r => r.days !== null && r.days >= 0) || null);
+  unitWord = (s: { unit: string; spare: number }) => { const u = s.unit.replace(' this month', '').replace(' a month', ''); return Math.abs(s.spare) === 1 ? u.replace(/s$/, '').replace(/ days$/, ' day') : u; };
+  stamp = (iso: string) => { const d = String(iso); return niceDate(d.slice(0, 10)) + ' at ' + d.slice(11, 16); };
+  stateWord: Record<string, string> = { live: 'Live', down: 'Not answering', snapshot: 'Copy', locked: 'Locked', off: 'Not connected' };
   tight = computed(() => [...this.p()!.seats].sort((a, b) => (b.pct || 0) - (a.pct || 0))[0]);
   stages = computed(() => { const p = this.p()!; const o = p.output.this_month.videos.by_stage; const order: string[] = p.rules['video_stage_order'];
     const max = Math.max(1, ...Object.values(o)); return order.filter(k => o[k]).map(k => ({ key: k, label: p.rules['video_stage_labels'][k] || k, n: o[k], w: Math.round(o[k] * 100 / max) })); });

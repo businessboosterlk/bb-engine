@@ -57,6 +57,38 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   /* ---- sales pipeline, counts only for the team ---- */
   const pipe = { open: raw.pipeline.filter(p => !/closed/.test(p.stage || '')).length, by_stage: stageCount(raw.pipeline.map(p => ({ current_stage: p.stage }))) };
 
+  /* ---- intake: clients whose start date falls in this month ---- */
+  const intake = { new_this_month: clients.filter(c => (c.start_date || '').startsWith(ym)).map(c => ({ name: title(c.name), date: c.start_date })).sort((a, b) => a.date.localeCompare(b.date)) };
+
+  /* ---- ads: the Meta feed, leads for the team, spend only in the owner document ---- */
+  const accName = Object.fromEntries((raw.adsAccounts || []).map(a => [a.account_id, a]));
+  const leadsOf = r => { const e = (r.actions || []).find(x => x.action_type === 'lead'); return e ? Number(e.value) || 0 : 0; };
+  const byAcc = {};
+  (raw.adsDaily || []).forEach(r => { const a = byAcc[r.account_id] ||= { id: r.account_id, leads: 0, impressions: 0, days: new Set(), spend: 0 }; a.leads += leadsOf(r); a.impressions += Number(r.impressions) || 0; a.spend += Number(r.spend) || 0; a.days.add(r.day); });
+  const accRows = Object.values(byAcc).map(a => ({ id: a.id, name: accName[a.id]?.name || a.id, client: accName[a.id]?.client_id && byId[accName[a.id].client_id] ? title(byId[accName[a.id].client_id].name) : null, leads: a.leads, impressions: a.impressions, days: a.days.size, spend: Math.round(a.spend * 100) / 100, currency: accName[a.id]?.currency || '' }))
+    .sort((a, b) => b.leads - a.leads || b.impressions - a.impressions);
+  const lastPull = (raw.adsPull || [])[0] || null;
+  const ads = { measured: (raw.adsDaily || []).length > 0 || !!lastPull, form_leads: sum(accRows, 'leads'), accounts: accRows.map(({ spend, currency, ...r }) => r),
+    unmapped: (raw.adsAccounts || []).filter(a => a.active && !a.client_id).length, last_pull: lastPull ? { at: lastPull.finished_at || lastPull.started_at, ok: !!lastPull.ok } : null };
+
+  /* ---- the Brain: counts only, read from the Brain's own build on this Mac ---- */
+  const brain = raw.brain ? { generated: raw.brain.generated, skills: raw.brain.skills, learnings_this_month: raw.brain.learnings_this_month, decisions: raw.brain.decisions } : null;
+
+  /* ---- where every number comes from, and how fresh it is ---- */
+  const answered = k => !raw.gaps.some(g => g.startsWith(k + ':'));
+  const sources = [
+    { key: 'clients', name: 'Clients', from: 'Command Centre, clients', state: answered('clients') ? 'live' : 'down', note: `${clients.length} active with a fee` },
+    { key: 'team', name: 'Team', from: 'Command Centre, team_members', state: answered('team_members') ? 'live' : 'down', note: `${team.length} active` },
+    { key: 'videos', name: 'Videos', from: 'Video system, video_projects', state: answered('video_projects') ? 'live' : 'down', note: `${thisMonth.videos.in_system} for ${label(Y, M)}` },
+    { key: 'posts', name: 'Posts', from: 'Graphic system, graphic_projects', state: answered('graphic_projects') ? 'live' : 'down', note: `${thisMonth.posts.in_system} for ${label(Y, M)}` },
+    { key: 'shoots', name: 'Shoots', from: 'Shoot planner, smm_shoots', state: answered('smm_shoots') ? 'live' : 'down', note: `${shootDays} shoot days this month` },
+    { key: 'ads', name: 'Meta ads', from: 'Ads feed, pulled 06:50 daily', state: ads.last_pull ? (ads.last_pull.ok ? 'live' : 'down') : 'off', note: ads.last_pull ? `last pull ${String(ads.last_pull.at).slice(0, 16).replace('T', ' ')}` : 'no pull recorded' },
+    { key: 'brain', name: 'The Brain', from: 'BB Brain build on the Mac', state: brain ? 'live' : 'off', note: brain ? `built ${String(brain.generated).slice(0, 16).replace('T', ' ')} UTC` : 'not found on this Mac' },
+    { key: 'money', name: 'Costs and invoices', from: 'Command Centre, finance tables', state: raw.money_source === 'live' ? 'live' : 'snapshot', note: raw.money_source === 'live' ? 'read live' : 'a hand-taken copy until the service key is in' },
+    { key: 'leads', name: 'Sales leads', from: 'Leads System, pipeline', state: raw.pipeline.length ? 'live' : 'locked', note: raw.pipeline.length ? `${pipe.open} open` : 'locked to the public key, needs the service key' },
+    { key: 'stories', name: 'Stories', from: 'no BB system records them', state: 'off', note: 'not measured' },
+  ];
+
   /* ---- alerts the team can act on ---- */
   const alerts = [];
   soon.forEach(r => alerts.push({ level: r.days <= 14 ? 'red' : 'amber', title: `${r.name} ends ${nice(r.date)}`, why: r.days < 0 ? `${-r.days} days past its end date with no renewal recorded` : `${r.days} days to renew`, href: '/engine/clients', q: { open: r.name } }));
@@ -64,6 +96,8 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   if (late.length) alerts.push({ level: late.length > 10 ? 'red' : 'amber', title: `${late.length} videos past their deadline`, why: `Oldest: ${late[0].client}, ${late[0].days} days`, href: '/engine/output' });
   if (!upcoming.length) alerts.push({ level: 'amber', title: 'No shoot booked ahead', why: 'smm_shoots has nothing from today on', href: '/engine/output' });
   const unassigned = roster.filter(r => !r.smm); if (unassigned.length) alerts.push({ level: 'amber', title: `${unassigned.length} clients have no social media manager`, why: unassigned.map(r => r.name).join(', '), href: '/engine/clients' });
+  if (ads.last_pull && !ads.last_pull.ok) alerts.push({ level: 'amber', title: 'The ads feed failed its last pull', why: `Last tried ${String(ads.last_pull.at).slice(0, 16).replace('T', ' ')}`, href: '/engine/alerts' });
+  if (ads.unmapped) alerts.push({ level: 'grey', title: `${ads.unmapped} ad accounts are not matched to a client`, why: 'Their leads count in the total but cannot be credited to a client until they are mapped in the Command Centre', href: '/engine/alerts' });
   raw.gaps.forEach(g => alerts.push({ level: 'grey', title: 'A table did not answer', why: g, href: '/engine/alerts' }));
 
   /* ---- the owner document: every rupee ---- */
@@ -86,6 +120,7 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
     renewals_value: soon.map(r => ({ ...r, mrr: clients.find(c => title(c.name) === r.name)?.mrr || 0 })),
     unbooked_pay: unbooked,
     forecast,
+    ads_spend: accRows.map(a => ({ name: a.name, client: a.client, spend: a.spend, currency: a.currency, leads: a.leads })),
   };
   owner.profit = owner.invoices.billed - owner.costs.total;
   owner.profit_on_mrr = mrr - owner.costs.total;
@@ -96,7 +131,7 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   owner.alerts = ownerAlerts;
 
   const pub = { generated: nowIso, month: { ym, label: label(Y, M), prev: label(PY, PM) }, counts: { clients: clients.length, posts: sum(clients, 'monthly_posts'), videos: videoDemand, stories: sum(clients, 'monthly_stories'), team: team.length },
-    clients: roster, team, seats, devs, output: { this_month: thisMonth, last_month: lastMonth, late }, shoots: { this_month: shootDays, upcoming }, renewals, pipeline: pipe, alerts, gaps: raw.gaps, rules,
+    clients: roster, team, seats, devs, output: { this_month: thisMonth, last_month: lastMonth, late }, shoots: { this_month: shootDays, upcoming }, renewals, pipeline: pipe, intake, ads, brain, sources, alerts, gaps: raw.gaps, rules,
     owner_alert_count: ownerAlerts.length };
   return { pub, owner };
 }

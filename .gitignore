@@ -13,3 +13,4 @@ engine/forecast.json
 engine/local/
 evidence/
 node_modules/
+ENGINE-FAILING.txt

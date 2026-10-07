@@ -15,6 +15,10 @@ export interface EnginePub {
   shoots: { this_month: number; upcoming: { client: string; date: string; videos: number; stage: string }[] };
   renewals: { name: string; date: string; days: number | null }[];
   pipeline: { open: number; by_stage: Record<string, number> };
+  intake?: { new_this_month: { name: string; date: string }[] };
+  ads?: { measured: boolean; form_leads: number; unmapped: number; last_pull: { at: string; ok: boolean } | null; accounts: { id: string; name: string; client: string | null; leads: number; impressions: number; days: number }[] };
+  brain?: { generated: string; skills: number; learnings_this_month: number; decisions: number } | null;
+  sources?: { key: string; name: string; from: string; state: 'live' | 'down' | 'snapshot' | 'locked' | 'off'; note: string }[];
   alerts: Alert[]; gaps: string[]; rules: Record<string, any>; owner_alert_count: number;
   vault: { state: 'held' | 'sealed'; lock: string };
 }

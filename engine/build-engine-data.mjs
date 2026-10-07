@@ -26,6 +26,10 @@ let forecast = null; try { forecast = JSON.parse(fs.readFileSync(path.join(HERE,
 const now = new Date(Date.now() + 5.5 * 3600e3); const nowIso = now.toISOString().replace('Z', '+05:30');
 const ym = today().slice(0, 7), prev = prev2(ym);
 const raw = await pull(ym, prev);
+/* the Brain's own build on this Mac: counts only travel, never its words */
+try { const d = new Function('window', fs.readFileSync(path.join(process.env.HOME, 'bb-brain', 'brain-data.js'), 'utf8') + '; return window.BRAIN_DATA;')({});
+  raw.brain = { generated: d.generated, skills: (d.skills || []).length, decisions: (d.decisions || []).length, learnings_this_month: (d.timeline || []).filter(e => String(e.date || '').startsWith(ym)).length };
+} catch { raw.brain = null; }
 const { pub, owner } = compute(raw, rules, forecast, ym, prev, nowIso);
 
 /* ---- self test: every total re-added from the rows it came from, and the lock proven both ways ---- */
@@ -41,6 +45,9 @@ ok('video demand equals the sum of monthly_videos', pub.counts.videos === sum(ra
 ok('every seat has a capacity, a load and a rule', pub.seats.every(s => s.capacity >= 0 && s.load >= 0 && s.rule), pub.seats.map(s => s.key + ':' + s.pct));
 ok('this month videos done plus open equal the rows in the system', pub.output.this_month.videos.done + pub.output.this_month.videos.open === pub.output.this_month.videos.in_system);
 ok('stories are not measured, never 0', pub.output.this_month.stories.done === null);
+ok('new clients are the active clients that started this month', pub.intake.new_this_month.length === raw.clients.filter(c => (c.mrr || 0) > 0 && (c.start_date || '').startsWith(ym)).length, pub.intake.new_this_month.length);
+ok('form leads equal the lead actions in the ads rows', pub.ads.form_leads === raw.adsDaily.reduce((a, r) => a + Number(((r.actions || []).find(x => x.action_type === 'lead') || {}).value || 0), 0), pub.ads.form_leads);
+ok('ad spend lives only in the owner document', !JSON.stringify(pub.ads).includes('spend') && owner.ads_spend.length === pub.ads.accounts.length);
 ok('no fee, cost or invoice figure in the team document', !JSON.stringify(pub).match(/"(mrr|amount|billed|cost|profit|salary|pay)"\s*:\s*\d/));
 const probe = seal({ a: 1 }, 'copper lantern river monsoon kite'); let opened = null, wrong = null;
 try { opened = unseal(probe, 'copper lantern river monsoon kite'); } catch {} try { wrong = unseal(probe, 'copper lantern river monsoon bike'); } catch (e) { wrong = 'refused'; }

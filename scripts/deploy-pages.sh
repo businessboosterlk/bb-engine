@@ -13,7 +13,7 @@ fi
 node scripts/stamp.mjs --check
 grep -q "\"build\":\"$(sed -n "s/.*BUILD = '\(.*\)'.*/\1/p" apps/web/src/app/core/build.ts)\"" apps/web/dist/web/browser/version.json || { echo "NOT PUBLISHED: the build on disk does not carry the current stamp"; exit 1; }
 D="$(mktemp -d)"
-git clone -q --branch gh-pages --depth 1 git@github.com:businessboosterlk/bb-engine.git "$D"
+git clone -q --branch gh-pages --depth 1 https://github.com/businessboosterlk/bb-engine.git "$D"
 find "$D" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -r {} +
 cp -R apps/web/dist/web/browser/. "$D/"
 cp "$D/index.html" "$D/404.html"

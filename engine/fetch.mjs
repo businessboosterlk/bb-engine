@@ -23,6 +23,9 @@ const COLS = {
   graphic_projects: 'id,title,type,client_id,client_name,assigned_designer_id,assigned_designer,current_stage,priority,deadline,is_archived,target_month,target_year,completed_at,created_at,updated_at',
   video_projects: 'id,client_id,shoot_id,title,current_stage,assigned_editor_id,priority,deadline,completed_at,is_archived,type,target_month,target_year,created_at,updated_at',
   clients: 'id,name,package,mrr,health,industry,start_date,renewal,notes,client_type,assigned_smm,monthly_posts,monthly_videos,monthly_stories,status,ended_on',
+  bb_ads_daily: 'day,account_id,impressions,spend,actions',
+  bb_ads_accounts: 'account_id,name,currency,client_id,active',
+  bb_ads_pull_log: 'id,started_at,finished_at,ok,accounts,rows,error',
 };
 export async function table(name, query = '', { order = 'id', key = 'anon' } = {}) {
   const e = env(); const rows = []; const gaps = [];
@@ -52,6 +55,10 @@ export async function pull(ym, prev) {
     costs: table('costs', `month=in.(${months.join(',')})`, { key: svc }),
     invoices: table('invoices', `month=in.(${[prev2(prev), prev, ym].join(',')})`, { key: svc }),
     lateVideos: table('video_projects', `deadline=lt.${today()}&current_stage=neq.add_to_drive&is_archived=not.is.true`),
+    /* the Meta ads feed the Command Centre pulls every morning at 06:50 */
+    adsDaily: table('bb_ads_daily', `day=gte.${ym}-01`, { order: 'day' }),
+    adsAccounts: table('bb_ads_accounts', '', { order: 'account_id' }),
+    adsPull: table('bb_ads_pull_log', 'limit=1', { order: 'id.desc' }),
   };
   const out = {}; const gaps = []; out.money_source = 'live';
   for (const [k, p] of Object.entries(reads)) { const r = await p; out[k] = r.rows; gaps.push(...r.gaps); }
