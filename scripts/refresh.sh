@@ -11,10 +11,12 @@ STAMP="$(date '+%Y-%m-%d %H:%M')"
 python3 "$HOME/bb-consultancy/finance/export_engine_forecast.py" >/dev/null 2>&1 || true
 # 2. read the live tables, re-add every total, seal; 3. stamp, full gate, publish, read the live files back
 if OUT="$( { node engine/build-engine-data.mjs && bash scripts/deploy-pages.sh; } 2>&1)"; then
+  printf '%s\n' "$OUT" > engine/local/last-refresh.txt
   rm -f ENGINE-FAILING.txt
   echo "$STAMP ok $(printf '%s' "$OUT" | grep -E 'published|verified|LIVE' | tail -1 | cut -c1-140)" >> "$LOG"
   echo "engine refreshed and published"
 else
+  printf '%s\n' "$OUT" > engine/local/last-refresh.txt
   printf '%s\nThe Engine did not refresh. The last good version is still live.\n\n%s\n' "$STAMP" "$(printf '%s' "$OUT" | grep -E 'FAIL|RED|NOT PUBLISHED|did not answer|HTTP' | head -12)" > ENGINE-FAILING.txt
   echo "$STAMP FAILED $(printf '%s' "$OUT" | grep -E 'NOT PUBLISHED|RED' | tail -1)" >> "$LOG"
   echo "engine NOT refreshed: see ~/bb-systems/bb-engine/ENGINE-FAILING.txt"; exit 1
