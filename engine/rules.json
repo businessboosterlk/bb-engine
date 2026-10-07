@@ -7,19 +7,51 @@
   "shoot_days_per_month": 20,
   "video_done_stage": "add_to_drive",
   "graphic_done_stage": "approved",
-  "video_stage_order": ["video_shot", "cutting_color_grading", "editing", "rendering", "video_head_review", "client_review", "changes", "client_changes", "add_to_drive"],
+  "video_stage_order": [
+    "video_shot",
+    "cutting_color_grading",
+    "editing",
+    "rendering",
+    "video_head_review",
+    "client_review",
+    "changes",
+    "client_changes",
+    "add_to_drive"
+  ],
   "video_stage_labels": {
-    "video_shot": "Shot", "cutting_color_grading": "Cut and grade", "editing": "Editing", "rendering": "Rendering",
-    "video_head_review": "Head review", "client_review": "Client review", "changes": "Changes", "client_changes": "Client changes", "add_to_drive": "Done"
+    "video_shot": "Shot",
+    "cutting_color_grading": "Cut and grade",
+    "editing": "Editing",
+    "rendering": "Rendering",
+    "video_head_review": "Head review",
+    "client_review": "Client review",
+    "changes": "Changes",
+    "client_changes": "Client changes",
+    "add_to_drive": "Done"
   },
   "roles": {
-    "smm": ["Social Media Manager"],
-    "design": ["Graphic Designer"],
-    "edit": ["editor"],
-    "shoot": ["video_head"],
-    "dev": ["Dev Head", "Developer"]
+    "smm": [
+      "Social Media Manager"
+    ],
+    "design": [
+      "Graphic Designer"
+    ],
+    "edit": [
+      "editor"
+    ],
+    "shoot": [
+      "video_head"
+    ],
+    "dev": [
+      "Dev Head",
+      "Developer"
+    ]
   },
   "renewal_warning_days": 60,
   "near_capacity_pct": 85,
-  "unpaid_days": 30
+  "unpaid_days": 30,
+  "person_caps": {
+    "_about": "A person whose capacity differs from their seat's rule. 0 means counted in the team but not yet given work capacity.",
+    "Hithesh": 0
+  }
 }

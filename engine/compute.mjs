@@ -40,8 +40,12 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   const shootDays = raw.shoots.filter(s => (s.shoot_date || '').startsWith(ym)).length;
   const upcoming = raw.shoots.filter(s => s.shoot_date >= today).map(s => ({ client: byId[s.client_id]?.name || s.title, date: s.shoot_date, videos: s.video_count, stage: s.stage || s.status })).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 12);
   const seat = (key, label, who, capacity, load, unit, rule) => ({ key, label, people: who, capacity, load, unit, spare: capacity - load, pct: capacity ? Math.round(load * 1000 / capacity) / 10 : null, rule });
+  /* a person with their own cap (a junior) counts that cap, not the full seat */
+  const capOf = (n, seatCap) => (rules.person_caps && n in rules.person_caps) ? rules.person_caps[n] : seatCap;
+  const smmJunior = people('smm').filter(n => rules.person_caps && n in rules.person_caps);
+  const smmCap = people('smm').reduce((a, n) => a + capOf(n, rules.smm_cap_per_seat), 0);
   const seats = [
-    seat('smm', 'Social media', people('smm'), people('smm').length * rules.smm_cap_per_seat, clients.length, 'clients', `${rules.smm_cap_per_seat} clients a seat, ${people('smm').length} seats`),
+    seat('smm', 'Social media', people('smm'), smmCap, clients.length, 'clients', `${rules.smm_cap_per_seat} clients a seat` + (smmJunior.length ? `, ${smmJunior.map(n => n + ' ' + (rules.person_caps[n] || 'not yet counted')).join(', ')}` : `, ${people('smm').length} seats`)),
     seat('design', 'Design', people('design'), people('design').length * rules.design_clients_per_designer, clients.length, 'clients', `about ${rules.design_clients_per_designer} clients a designer, measured in the October sprint`),
     seat('edit', 'Editing', people('edit'), rules.edit_capacity_videos_per_month, videoDemand, 'videos a month', `${rules.edit_capacity_videos_per_month} videos a month, measured from the Oct to Dec edit timetable`),
     seat('shoot', 'Shooting', people('shoot'), rules.shoot_days_per_month, shootDays, 'shoot days this month', `${rules.shoot_days_per_month} shoot days a month for the video head`),
