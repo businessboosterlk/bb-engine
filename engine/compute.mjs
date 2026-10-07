@@ -74,7 +74,8 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   /* ---- the Brain: counts only, read from the Brain's own build on this Mac ---- */
   const brain = raw.brain ? { generated: raw.brain.generated, skills: raw.brain.skills, learnings_this_month: raw.brain.learnings_this_month, decisions: raw.brain.decisions } : null;
 
-  /* ---- where every number comes from, and how fresh it is ---- */
+  /* ---- where every number comes from, and how fresh it is; times in Colombo ---- */
+  const lk = iso => iso ? new Date(new Date(iso).getTime() + 5.5 * 3600e3).toISOString().slice(0, 16).replace('T', ' ') : '';
   const answered = k => !raw.gaps.some(g => g.startsWith(k + ':'));
   const sources = [
     { key: 'clients', name: 'Clients', from: 'Command Centre, clients', state: answered('clients') ? 'live' : 'down', note: `${clients.length} active with a fee` },
@@ -82,8 +83,8 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
     { key: 'videos', name: 'Videos', from: 'Video system, video_projects', state: answered('video_projects') ? 'live' : 'down', note: `${thisMonth.videos.in_system} for ${label(Y, M)}` },
     { key: 'posts', name: 'Posts', from: 'Graphic system, graphic_projects', state: answered('graphic_projects') ? 'live' : 'down', note: `${thisMonth.posts.in_system} for ${label(Y, M)}` },
     { key: 'shoots', name: 'Shoots', from: 'Shoot planner, smm_shoots', state: answered('smm_shoots') ? 'live' : 'down', note: `${shootDays} shoot days this month` },
-    { key: 'ads', name: 'Meta ads', from: 'Ads feed, pulled 06:50 daily', state: ads.last_pull ? (ads.last_pull.ok ? 'live' : 'down') : 'off', note: ads.last_pull ? `last pull ${String(ads.last_pull.at).slice(0, 16).replace('T', ' ')}` : 'no pull recorded' },
-    { key: 'brain', name: 'The Brain', from: 'BB Brain build on the Mac', state: brain ? 'live' : 'off', note: brain ? `built ${String(brain.generated).slice(0, 16).replace('T', ' ')} UTC` : 'not found on this Mac' },
+    { key: 'ads', name: 'Meta ads', from: 'Ads feed, pulled 06:50 daily', state: ads.last_pull ? (ads.last_pull.ok ? 'live' : 'down') : 'off', note: ads.last_pull ? `last pull ${lk(ads.last_pull.at)} Colombo` : 'no pull recorded' },
+    { key: 'brain', name: 'The Brain', from: 'BB Brain build on the Mac', state: brain ? 'live' : 'off', note: brain ? `built ${lk(brain.generated)} Colombo` : 'not found on this Mac' },
     { key: 'money', name: 'Costs and invoices', from: 'Command Centre, finance tables', state: raw.money_source === 'live' ? 'live' : 'snapshot', note: raw.money_source === 'live' ? 'read live' : 'a hand-taken copy until the service key is in' },
     { key: 'leads', name: 'Sales leads', from: 'Leads System, pipeline', state: raw.pipeline.length ? 'live' : 'locked', note: raw.pipeline.length ? `${pipe.open} open` : 'locked to the public key, needs the service key' },
     { key: 'stories', name: 'Stories', from: 'no BB system records them', state: 'off', note: 'not measured' },
