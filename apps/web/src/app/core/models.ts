@@ -23,12 +23,12 @@ export interface EnginePub {
   vault: { state: 'held' | 'sealed'; lock: string };
 }
 export interface Owner {
-  month: string; mrr: number; avg_fee: number | null;
-  fees: { name: string; mrr: number; renewal: string | null; note: string }[];
+  month: string; mrr: number | null; avg_fee: number | null; fees_note?: string;
+  fees: { name: string; mrr: number | null; renewal: string | null; note: string }[];
   costs: { total: number; by_category: Record<string, number>; lines: { what: string; amount: number; category: string; paid: boolean }[]; next_months: Record<string, number> };
   invoices: { billed: number; paid: number; unpaid: number; count: number; paid_count: number; rows: { client: string; amount: number; status: string; due: string | null }[]; owed_before: { client: string; amount: number; month: string }[] };
-  pipeline_value: number; renewals_value: { name: string; date: string; days: number | null; mrr: number }[];
-  unbooked_pay: string[]; profit: number; profit_on_mrr: number; alerts: Alert[];
+  pipeline_value: number; renewals_value: { name: string; date: string; days: number | null; mrr: number | null }[];
+  unbooked_pay: string[]; profit: number; profit_on_mrr: number | null; alerts: Alert[];
   forecast: Forecast | null;
 }
 export interface Scenario { path: string; add: string; rev: number[]; cost: number[]; prof: number[]; cum: number[]; new_rev: number[]; web_rev: number[]; sys_rev: number[];

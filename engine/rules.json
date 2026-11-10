@@ -52,6 +52,6 @@
   "unpaid_days": 30,
   "person_caps": {
     "_about": "A person whose capacity differs from their seat's rule. 0 means counted in the team but not yet given work capacity.",
-    "Hithesh": 0
+    "Hithesh": 8
   }
 }

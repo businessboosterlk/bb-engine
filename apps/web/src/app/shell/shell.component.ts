@@ -97,7 +97,7 @@ interface NavGroup { key: 'engine' | 'owner'; label: string; items: NavItem[]; }
     nav a.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600}
     nav a.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
     nav a bb-icon{--ico:17px;opacity:.85}nav a.on bb-icon{opacity:1;color:var(--brand)}
-    .nb{margin-left:auto;font-size:11px;font-weight:700;background:var(--red);color:#fff;padding:calc(1px + .05em) 7px calc(1px - .05em);border-radius:999px}
+    .nb{margin-left:auto;font-size:11px;font-weight:700;background:var(--red);color:var(--on-red);padding:calc(1px + .05em) 7px calc(1px - .05em);border-radius:999px}
     .div{border:0;border-top:1px solid var(--sidebar-line);margin:10px 4px}
     .r-build{margin:10px 4px 0;font-size:11px;color:var(--sidebar-txt);opacity:.8;font-variant-numeric:tabular-nums;text-align:center}
     .r-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:14px 4px 0;border-top:1px solid var(--sidebar-line)}

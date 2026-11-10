@@ -22,7 +22,7 @@ const PAGE = 1000;
 const COLS = {
   graphic_projects: 'id,title,type,client_id,client_name,assigned_designer_id,assigned_designer,current_stage,priority,deadline,is_archived,target_month,target_year,completed_at,created_at,updated_at',
   video_projects: 'id,client_id,shoot_id,title,current_stage,assigned_editor_id,priority,deadline,completed_at,is_archived,type,target_month,target_year,created_at,updated_at',
-  clients: 'id,name,package,mrr,health,industry,start_date,renewal,notes,client_type,assigned_smm,monthly_posts,monthly_videos,monthly_stories,status,ended_on',
+  clients: 'id,name,package,health,industry,start_date,renewal,notes,client_type,assigned_smm,monthly_posts,monthly_videos,monthly_stories,status,ended_on',
   bb_ads_daily: 'day,account_id,impressions,spend,actions',
   bb_ads_accounts: 'account_id,name,currency,client_id,active',
   bb_ads_pull_log: 'id,started_at,finished_at,ok,accounts,rows,error',

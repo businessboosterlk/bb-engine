@@ -7,7 +7,9 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   const [Y, M] = ym.split('-').map(Number); const [PY, PM] = prevYm.split('-').map(Number);
   const today = nowIso.slice(0, 10);
   const days = d => d ? Math.round((new Date(d + 'T00:00:00Z') - new Date(today + 'T00:00:00Z')) / 864e5) : null;
-  const clients = raw.clients.filter(c => (c.mrr || 0) > 0).sort((a, b) => (b.mrr || 0) - (a.mrr || 0) || a.name.localeCompare(b.name));
+  /* A client is status active AND has a package (owner's decision, 10 Nov 2026). The fee column mrr is locked
+     to the public key and the Engine no longer reads it: see DECISIONS.md. */
+  const clients = raw.clients.filter(isClient).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   const byId = Object.fromEntries(clients.map(c => [c.id, c]));
   const team = raw.team.map(t => ({ id: t.id, name: title(t.name), role: t.role }));
   const roleOf = r => Object.entries(rules.roles).find(([, list]) => list.includes(r))?.[0] || 'other';
@@ -82,7 +84,7 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   const lk = iso => iso ? new Date(new Date(iso).getTime() + 5.5 * 3600e3).toISOString().slice(0, 16).replace('T', ' ') : '';
   const answered = k => !raw.gaps.some(g => g.startsWith(k + ':'));
   const sources = [
-    { key: 'clients', name: 'Clients', from: 'Command Centre, clients', state: answered('clients') ? 'live' : 'down', note: `${clients.length} active with a fee` },
+    { key: 'clients', name: 'Clients', from: 'Command Centre, clients', state: answered('clients') ? 'live' : 'down', note: `${clients.length} active with a package` },
     { key: 'team', name: 'Team', from: 'Command Centre, team_members', state: answered('team_members') ? 'live' : 'down', note: `${team.length} active` },
     { key: 'videos', name: 'Videos', from: 'Video system, video_projects', state: answered('video_projects') ? 'live' : 'down', note: `${thisMonth.videos.in_system} for ${label(Y, M)}` },
     { key: 'posts', name: 'Posts', from: 'Graphic system, graphic_projects', state: answered('graphic_projects') ? 'live' : 'down', note: `${thisMonth.posts.in_system} for ${label(Y, M)}` },
@@ -110,25 +112,26 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
   const inv = raw.invoices.filter(i => i.month === ym); const invBefore = raw.invoices.filter(i => i.month < ym);
   const paid = i => (i.status || '').toLowerCase() === 'paid';
   const byCat = {}; costs.forEach(c => { byCat[c.category || 'Other'] = (byCat[c.category || 'Other'] || 0) + (c.amount || 0); });
-  const mrr = sum(clients, 'mrr');
+  /* fees are not available: mrr is locked and never read. null, never 0 (the denominator law) */
+  const mrr = null;
   const payNames = new Set(costs.filter(c => c.category === 'Salaries').map(c => (c.description || '').split(',')[0].trim().toUpperCase()));
   const unbooked = raw.team.filter(t => !/THULAIB|SHIARA/i.test(t.name) && ![...payNames].some(p => p.startsWith(t.name.toUpperCase()))).map(t => title(t.name));
   const owner = {
-    month: label(Y, M), mrr, avg_fee: clients.length ? Math.round(mrr / clients.length) : null,
-    fees: clients.map(c => ({ name: title(c.name), mrr: c.mrr, renewal: c.renewal || null, note: c.notes || '' })),
+    month: label(Y, M), mrr, avg_fee: null, fees_note: 'Not available: the fee column is locked and the Engine does not read it',
+    fees: clients.map(c => ({ name: title(c.name), mrr: null, renewal: c.renewal || null, note: c.notes || '' })),
     costs: { total: sum(costs, 'amount'), by_category: byCat, lines: costs.map(c => ({ what: title(c.description || ''), amount: c.amount, category: c.category, paid: !!c.paid })).sort((a, b) => b.amount - a.amount),
       next_months: Object.fromEntries([...new Set(costsNext.map(c => c.month))].sort().map(m => [m, sum(costsNext.filter(c => c.month === m), 'amount')])) },
     invoices: { billed: sum(inv, 'amount'), paid: sum(inv.filter(paid), 'amount'), unpaid: sum(inv.filter(i => !paid(i)), 'amount'), count: inv.length, paid_count: inv.filter(paid).length,
       rows: inv.map(i => ({ client: title(i.client_name || ''), amount: i.amount, status: i.status, due: i.due_date })).sort((a, b) => b.amount - a.amount),
       owed_before: invBefore.filter(i => !paid(i)).map(i => ({ client: title(i.client_name || ''), amount: i.amount, month: i.month })).sort((a, b) => a.month.localeCompare(b.month)) },
     pipeline_value: sum(raw.pipeline.filter(p => !/closed/.test(p.stage || '')), 'estimated_value'),
-    renewals_value: soon.map(r => ({ ...r, mrr: clients.find(c => title(c.name) === r.name)?.mrr || 0 })),
+    renewals_value: soon.map(r => ({ ...r, mrr: null })),
     unbooked_pay: unbooked,
     forecast,
     ads_spend: accRows.map(a => ({ name: a.name, client: a.client, spend: a.spend, currency: a.currency, leads: a.leads })),
   };
   owner.profit = owner.invoices.billed - owner.costs.total;
-  owner.profit_on_mrr = mrr - owner.costs.total;
+  owner.profit_on_mrr = null;
   const ownerAlerts = [];
   if (owner.invoices.count && owner.invoices.paid_count / owner.invoices.count < .5) ownerAlerts.push({ level: 'amber', title: `${owner.invoices.count - owner.invoices.paid_count} of ${owner.invoices.count} invoices not ticked paid`, why: `${fmt(owner.invoices.unpaid)} unticked. The tick is the only record BB has, so the cash position is unknown`, href: '/owner/money' });
   if (owner.invoices.owed_before.length) ownerAlerts.push({ level: 'red', title: `${owner.invoices.owed_before.length} earlier invoices still unpaid`, why: fmt(sum(owner.invoices.owed_before, 'amount')) + ' from before ' + label(Y, M), href: '/owner/money' });
@@ -140,6 +143,7 @@ export function compute(raw, rules, forecast, ym, prevYm, nowIso) {
     owner_alert_count: ownerAlerts.length };
   return { pub, owner };
 }
+export const isClient = c => c.status === 'active' && String(c.package || '').trim() !== '';
 export const sum = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
 export const title = s => String(s || '').toLowerCase().replace(/(^|[\s(-])([a-z])/g, (m, p, c) => p + c.toUpperCase()).replace(/\bAi\b/g, 'AI').replace(/\bBs\b/g, 'BS').replace(/\bTt\b/g, 'TT').replace(/\bHomedepot\b/, 'Home Depot').replace(/\bBb\b/g, 'BB').replace(/\bSeo\b/g, 'SEO').replace(/\bKpi\b/g, 'KPI');
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

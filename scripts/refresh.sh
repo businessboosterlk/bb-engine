@@ -6,6 +6,12 @@
 export PATH="$HOME/.local/node/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
 cd "$(dirname "$0")/.." || exit 1
 LOG=engine/local/refresh.log; mkdir -p engine/local
+# ONE REFRESH AT A TIME (10 Nov 2026). Two ran together, shared one build folder and the loser wrote
+# ENGINE-FAILING.txt over a good publish. A second caller now leaves quietly; a lock older than 30 minutes is stale.
+LOCK=engine/local/refresh.lock
+[ -d "$LOCK" ] && [ -n "$(find "$LOCK" -maxdepth 0 -mmin +30)" ] && rmdir "$LOCK"
+mkdir "$LOCK" 2>/dev/null || { echo "engine refresh already running: left alone"; exit 0; }
+trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 STAMP="$(date '+%Y-%m-%d %H:%M')"
 # 1. the forecast file from the finance scripts (Python stays the source of every forecast number)
 python3 "$HOME/bb-consultancy/finance/export_engine_forecast.py" >/dev/null 2>&1 || true

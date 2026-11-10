@@ -15,10 +15,10 @@ import { VaultLockComponent } from '../../ui/vault-lock.component';
     @else { @if (o(); as o) {
     <div class="ph"><div><h1 class="t-h1">Money, {{ o.month }}</h1><p>Billed {{ money(o.invoices.billed) }} against {{ money(o.costs.total) }} of cost. {{ o.profit >= 0 ? money(o.profit) + ' left' : money(-o.profit) + ' short' }}, before tax.</p></div></div>
     <div class="kpi">
-      <div class="card"><div class="k-label">Monthly fees</div><div class="k-val">{{ money(o.mrr) }}</div><div class="k-sub">{{ o.fees.length }} clients, average {{ money(o.avg_fee) }}</div></div>
+      <div class="card"><div class="k-label">Monthly fees</div>@if (o.mrr !== null && o.mrr !== undefined) { <div class="k-val">{{ money(o.mrr) }}</div><div class="k-sub">{{ o.fees.length }} clients, average {{ o.avg_fee !== null ? money(o.avg_fee) : 'not available' }}</div> } @else { <div class="k-val na">Not available</div><div class="k-sub">{{ o.fees.length }} clients; the fee column is locked</div> }</div>
       <div class="card"><div class="k-label">Billed this month</div><div class="k-val">{{ money(o.invoices.billed) }}</div><div class="k-sub">{{ o.invoices.count }} invoices</div></div>
       <div class="card"><div class="k-label">Cost this month</div><div class="k-val">{{ money(o.costs.total) }}</div><div class="k-sub">{{ o.costs.lines.length }} lines, founders' draw inside</div></div>
-      <div class="card"><div class="k-label">Left</div><div class="k-val" [class.up]="o.profit > 0" [class.down]="o.profit < 0">{{ money(o.profit) }}</div><div class="k-sub">billed less cost · on fees alone {{ money(o.profit_on_mrr) }}</div></div>
+      <div class="card"><div class="k-label">Left</div><div class="k-val" [class.up]="o.profit > 0" [class.down]="o.profit < 0">{{ money(o.profit) }}</div><div class="k-sub">billed less cost{{ o.profit_on_mrr !== null && o.profit_on_mrr !== undefined ? ' · on fees alone ' + money(o.profit_on_mrr) : '' }}</div></div>
     </div>
     <div class="grid2">
       <div class="sec"><div class="sec-head"><h3>Collected</h3><span>the tick is the only record BB has</span></div>
@@ -41,15 +41,15 @@ import { VaultLockComponent } from '../../ui/vault-lock.component';
     <div class="sec"><div class="sec-head"><h3>Every cost line</h3><span>{{ o.costs.lines.length }}</span></div>
       <div class="card list">@for (l of o.costs.lines; track l.what + l.amount) { <div class="li"><span class="tx"><strong>{{ l.what }}</strong><span>{{ l.category }}{{ l.paid ? ' · paid' : '' }}</span></span><span class="num amt">{{ fmt(l.amount) }}</span></div> }</div></div>
     <div class="grid2">
-      <div class="sec"><div class="sec-head"><h3>Contracts ending in 60 days, with fees</h3><span>{{ money(renewTotal()) }} a month</span></div>
-        <div class="card list">@for (r of o.renewals_value; track r.name) { <div class="li"><span class="tx"><strong>{{ r.name }}</strong><span>{{ niceDate(r.date) }}</span></span><span class="num amt">{{ fmt(r.mrr) }}</span></div> } @empty { <div class="empty"><strong>None</strong>No contract ends in the next 60 days.</div> }</div></div>
+      <div class="sec"><div class="sec-head"><h3>Contracts ending in 60 days</h3><span>{{ renewTotal() !== null ? money(renewTotal()) + ' a month' : 'fees not available' }}</span></div>
+        <div class="card list">@for (r of o.renewals_value; track r.name) { <div class="li"><span class="tx"><strong>{{ r.name }}</strong><span>{{ niceDate(r.date) }}</span></span><span class="num amt">{{ r.mrr !== null && r.mrr !== undefined ? fmt(r.mrr) : 'Fee not available' }}</span></div> } @empty { <div class="empty"><strong>None</strong>No contract ends in the next 60 days.</div> }</div></div>
       <div class="sec"><div class="sec-head"><h3>Costs booked ahead</h3><span>from the cost sheet</span></div>
         <div class="card list">@for (m of nextMonths(); track m.month) { <div class="li"><span class="tx"><strong>{{ m.month }}</strong></span><span class="num amt">{{ fmt(m.total) }}</span></div> } @empty { <div class="empty"><strong>Nothing booked ahead</strong>Costs are entered at month end.</div> }</div></div>
     </div>
-    <p class="t-small foot">Fees from the Command Centre's clients table. Costs and invoices {{ source() }}. No tax, EPF or ETF is in these figures. Confirm this with BB's chartered accountant before acting.</p>
+    <p class="t-small foot">Fees are not shown: the fee column is locked and the Engine does not read it. Costs and invoices {{ source() }}. No tax, EPF or ETF is in these figures. Confirm this with BB's chartered accountant before acting.</p>
     } }`,
   styles: [`
-    .k-val.up{color:var(--green)}.k-val.down{color:var(--red)}
+    .k-val.na{color:var(--muted);font-size:18px}.k-val.up{color:var(--green)}.k-val.down{color:var(--red)}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media (max-width:900px){.grid2{grid-template-columns:1fr}}
     .pad{padding:16px 18px}
     .collect{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}.collect strong{display:block;font-size:18px;font-weight:700;letter-spacing:-.01em}.collect span{font-size:12px;color:var(--muted)}
@@ -68,7 +68,7 @@ export class MoneyComponent {
   money = money; fmt = fmt; niceDate = niceDate;
   cats = computed(() => { const o = this.o()!; const e = Object.entries(o.costs.by_category).sort((a, b) => b[1] - a[1]); const max = Math.max(1, ...e.map(x => x[1])); return e.map(([name, v]) => ({ name, v, w: Math.round(v * 100 / max) })); });
   owedTotal = computed(() => this.o()!.invoices.owed_before.reduce((a, r) => a + r.amount, 0));
-  renewTotal = computed(() => this.o()!.renewals_value.reduce((a, r) => a + r.mrr, 0));
+  renewTotal = computed(() => { const r = this.o()!.renewals_value; return r.some(x => x.mrr === null || x.mrr === undefined) ? null : r.reduce((a, x) => a + (x.mrr as number), 0); });
   nextMonths = computed(() => Object.entries(this.o()!.costs.next_months).map(([month, total]) => ({ month, total })));
   source = computed(() => { const m = this.engine.meta(); return (this.o() as any)?.source ? 'from ' + (this.o() as any).source : 'from the Command Centre on ' + (m?.generated || '').slice(0, 10); });
 }

@@ -20,7 +20,9 @@ for (const s of ['icon-centre.mjs', 'build-icons.mjs']) {
   out.push(`${ok ? 'PASS' : 'FAIL'}  the check itself: centred reads ${a.dy}, moved 3px reads ${m.dy}`); if (!ok) bad++; total++;
   await p.context().close(); }
 /* the icon itself, not the button: the active screen's dot under the icon is ink too, and it sits below on purpose */
-const tabs = [0, 1, 2, 3, 4].map(i => ({ name: `tab bar icon ${i + 1}`, sel: '.bm-btn bb-icon', index: i, inset: 0, desk: false }));
+/* the alert dot is a SIBLING of the icon and overlaps its top right corner on purpose, so optical's own hide (which looks
+   inside the measured element) cannot reach it: it is hidden for the tab readings only, then put back (10 Nov 2026) */
+const tabs = [0, 1, 2, 3, 4].map(i => ({ name: `tab bar icon ${i + 1}`, sel: '.bm-btn bb-icon', index: i, inset: 0, desk: false, hideBeside: '.bm-btn .dot' }));
 const plan = [
   ['/engine/machine', [
     { name: 'the number on the centre of a capacity ring', sel: '.seat bb-ring .ring', inset: 10, shape: 'circle', text: true },
@@ -42,7 +44,9 @@ for (const [tag, opt] of [['phone', {}], ['desk', { desk: true, width: 1440 }]])
       if (!(await p.locator(it.sel).count())) { out.push(`FAIL  ${tag} ${dark ? 'night' : 'day'} ${hash} · ${it.name}: nothing found at ${it.sel}`); bad++; total++; continue; }
       const el = p.locator(it.sel).nth(it.index || 0); await el.evaluate(n => n.scrollIntoView({ block: 'center' })).catch(() => {}); await p.waitForTimeout(150);
       if (!(await el.isVisible())) { out.push(`FAIL  ${tag} ${dark ? 'night' : 'day'} ${hash} · ${it.name}: ${it.sel} is on the page but not visible`); bad++; total++; continue; }
+      if (it.hideBeside) await p.evaluate(h => document.querySelectorAll(h).forEach(x => { x.style.visibility = 'hidden'; }), it.hideBeside);
       const r = await report(p, [{ ...it, name: `${tag} ${dark ? 'night' : 'day'} ${hash} · ${it.name}` }], TOL); out.push(...r.rows); bad += r.bad; total++;
+      if (it.hideBeside) await p.evaluate(h => document.querySelectorAll(h).forEach(x => { x.style.visibility = ''; }), it.hideBeside);
     }
   }
   await c.close();

@@ -9,7 +9,7 @@
   --brand:#8a5a2b;--brand-dark:#6f4823;--brand-deep:#4c311a;--brand-soft:#f3ebe3;--brand-soft-2:#faf6f1;
   --brand-ink:#1a1410;--on-accent:#ffffff;--brand-text:#6f4823;
   --sidebar:#101012;--sidebar-line:rgba(255,255,255,.07);--sidebar-txt:#b9bcc4;--sidebar-faint:#8f929b;
-  --green:#0e7a4f;--green-soft:#e6f4ec;--amber:#8f4f0e;--amber-soft:#fbf1e3;--red:#b42318;--red-soft:#fbe9e7;
+  --green:#0e7a4f;--green-soft:#e6f4ec;--amber:#8f4f0e;--amber-soft:#fbf1e3;--red:#b42318;--red-soft:#fbe9e7;--on-red:#ffffff;
   --blue:#1f5fbf;--blue-soft:#e8effb;--purple:#6941c6;--purple-soft:#efeafb;
   --r-s:8px;--r:12px;--r-l:16px;
   --sh-1:0 1px 2px rgba(20,20,23,.06);
@@ -24,7 +24,7 @@ html[data-theme="dark"]{
   --bg:#0c0d10;--surface:#16171c;--surface-2:#1c1d23;--line:#26272e;--line-2:#30313a;
   --ink:#ecedef;--ink-2:#c9cbd2;--muted:#9b9ea6;--faint:#6d7077;
   --sidebar:#08080a;--sidebar-line:rgba(255,255,255,.06);--sidebar-txt:#babdc4;--sidebar-faint:#8f929b;
-  --green:#4ade80;--green-soft:rgba(22,163,74,.18);--amber:#fbbf24;--amber-soft:rgba(217,119,6,.18);--red:#f87171;--red-soft:rgba(224,85,85,.16);
+  --green:#4ade80;--green-soft:rgba(22,163,74,.18);--amber:#fbbf24;--amber-soft:rgba(217,119,6,.18);--red:#f87171;--red-soft:rgba(224,85,85,.16);--on-red:#1a0606;
   --blue:#60a5fa;--blue-soft:rgba(37,99,235,.18);--purple:#c084fc;--purple-soft:rgba(147,51,234,.18);
   --sh-1:0 1px 2px rgba(0,0,0,.3);--sh-lg:0 12px 32px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
   --glass:rgba(12,13,16,.88);--pill:rgba(12,13,16,.92);--pill-line:rgba(255,255,255,.1);--card-glass:#16171c;--hero:#1c1d23;--hero-line:rgba(255,255,255,.1);--dot-ring:#16171c;
@@ -253,7 +253,7 @@ button.li{width:100%;border:0;border-top:1px solid var(--line);background:none;t
 .btn.quiet{background:transparent;border-color:transparent;color:var(--muted)}
 @media (hover:hover){.btn.quiet:hover{background:var(--surface-2);color:var(--ink)}}
 .btn.quiet.warn{color:var(--red)}@media (hover:hover){.btn.quiet.warn:hover{background:var(--red-soft);color:var(--red)}}
-.btn.danger-solid{background:var(--red);color:#fff}@media (hover:hover){.btn.danger-solid:hover{background:var(--red)}}
+.btn.danger-solid{background:var(--red);color:var(--on-red)}@media (hover:hover){.btn.danger-solid:hover{background:var(--red)}}
 html[data-theme="dark"] .btn.danger-solid{background:#c93c3c;color:#fff}
 /* WhatsApp beside another secondary action: the same quiet surface, the brand green only on the mark */
 .btn.wa-ghost{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
